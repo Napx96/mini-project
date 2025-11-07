@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: ems_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ems_db
+      MYSQL_USER: ems_user
+      MYSQL_PASSWORD: ems_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  php-apache:
+    build: ./server
+    container_name: ems_php
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_USER: ems_user
+      DB_PASSWORD: ems_password
+      DB_NAME: ems_db
+    volumes:
+      - ./server:/var/www/html
+
+  client:
+    build: ./client
+    container_name: ems_client
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - php-apache
+
+volumes:
+  db_data:
